@@ -1,21 +1,53 @@
 {
-  "name": "frontend",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "name": "@coreui/coreui-free-vue-admin-template",
+  "version": "5.4.0",
+  "description": "CoreUI Free Vue Admin Template",
+  "bugs": {
+    "url": "https://github.com/coreui/coreui-free-vue-admin-template/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:coreui/coreui-free-vue-admin-template.git"
+  },
+  "license": "MIT",
+  "author": "The CoreUI Team (https://github.com/orgs/coreui/people)",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --force",
     "build": "vite build",
-    "preview": "vite preview"
+    "lint": "eslint",
+    "preview": "vite preview",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
+    "@coreui/chartjs": "^4.1.0",
+    "@coreui/coreui": "^5.4.1",
+    "@coreui/icons": "^3.0.1",
+    "@coreui/icons-vue": "2.2.0",
+    "@coreui/utils": "^2.0.2",
+    "@coreui/vue": "^5.5.0",
+    "@coreui/vue-chartjs": "^3.0.0",
+    "@popperjs/core": "^2.11.8",
     "axios": "^1.12.2",
-    "bootstrap": "^5.3.8",
-    "vue": "^3.5.21",
-    "vue-router": "^4.5.1"
+    "chart.js": "^4.5.0",
+    "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.5.25",
+    "pinia": "^3.0.3",
+    "simplebar-vue": "^2.4.2",
+    "sweetalert2": "^11.23.0",
+    "vue": "^3.5.18",
+    "vue-chartjs": "^5.3.2",
+    "vue-router": "^4.5.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.1",
-    "vite": "^7.1.7"
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9.32.0",
+    "eslint-plugin-vue": "^10.4.0",
+    "gh-pages": "^6.3.0",
+    "globals": "^16.3.0",
+    "postcss": "^8.5.6",
+    "sass": "^1.90.0",
+    "vite": "^7.1.0"
   }
 }
