@@ -25,6 +25,14 @@
               <CButton size="sm" color="info" @click="openDetail(claim.id)">
                 Detail
               </CButton>
+              <CButton
+                v-if="claim.status === 'approved'"
+                color="primary"
+                size="sm"
+                @click="downloadPDF(claim.id)"
+              >
+                Download PDF
+              </CButton>
             </CTableDataCell>
             <CTableDataCell>{{ formatDate(claim.created_at) }}</CTableDataCell>
             <CTableDataCell>{{ formatNumber(claim.amount) }}</CTableDataCell>
@@ -85,10 +93,10 @@
 
         <div class="ms-3">
           <CFormLabel class="me-2">Rows per page:</CFormLabel>
-          <CFormSelect v-model.number="perPage" class="d-inline-block w-auto">
-            <option :value="5">5</option>
-            <option :value="10">10</option>
-            <option :value="20">20</option>
+          <CFormSelect v-model="perPage" class="d-inline-block w-auto">
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
           </CFormSelect>
         </div>
       </div>
@@ -110,11 +118,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, watch, onMounted, computed } from "vue";
 import axios from "axios";
 import ClaimDetailModal from "@/pages/ClaimDetail.vue";
 import ClaimSubmitModal from "@/pages/ClaimForm.vue";
 
+const currentPage = ref(1);
+const perPage = ref("5");
 const showSubmit = ref(false);
 const claims = ref([]);
 const showModal = ref(false);
@@ -140,6 +150,8 @@ const fetchClaims = async () => {
   }
 };
 
+watch([perPage], fetchClaims);
+
 const formatDate = (dateStr) => {
   if (!dateStr) {
     return null;
@@ -155,9 +167,6 @@ const openDetail = (id) => {
   selectedClaimId.value = id;
   showModal.value = true;
 };
-
-const currentPage = ref(1);
-const perPage = ref(5);
 
 const totalPages = ref(0);
 const paginatedClaims = computed(() => claims.value);
@@ -194,6 +203,27 @@ const paginationPages = computed(() => {
 });
 
 const formatNumber = (n) => new Intl.NumberFormat("id-ID").format(n);
+
+const downloadPDF = async (id) => {
+  try {
+    const response = await axios.get(
+      `${import.meta.env.VITE_API_URL}/api/claims/${id}/pdf`,
+      {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        responseType: "blob",
+      }
+    );
+
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `claim-${id}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+  } catch (err) {
+    console.error(err);
+  }
+};
 
 onMounted(fetchClaims);
 </script>

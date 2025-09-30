@@ -10,9 +10,11 @@ app.use(express.json());
 
 const authRoutes = require("./routes/auth");
 const claimsRoutes = require("./routes/claims");
+const dashboardRoutes = require("./routes/dashboard");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/claims", claimsRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 const PORT = process.env.PORT || 4000;
 (async () => {

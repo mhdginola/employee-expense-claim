@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const db = require("../config/database.js");
 const auth = require("../middleware/auth");
+const PDFDocument = require("pdfkit");
 
 // create a claim (employee)
 router.post("/", auth("employee"), async (req, res) => {
@@ -125,6 +126,73 @@ router.post("/:id/reject", auth("manager"), async (req, res) => {
     );
     if (!rows[0]) return res.status(404).json({ error: "Not found" });
     res.json(rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Download PDF summary
+router.get("/:id/pdf", auth(), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const claim = await db.query(
+      `SELECT c.id, c.category, c.amount, c.created_at, c.status, 
+              e.full_name as employee_name, e.role 
+       FROM claims c 
+       JOIN users e ON c.user_id = e.id
+       WHERE c.id = $1`,
+      [id]
+    );
+
+    if (claim.rowCount === 0) {
+      return res.status(404).json({ error: "Claim not found" });
+    }
+
+    const data = claim.rows[0];
+
+    if (data.status !== "approved") {
+      return res.status(400).json({ error: "Claim not approved yet" });
+    }
+
+    // Generate PDF
+    const doc = new PDFDocument({ margin: 50 });
+    const filename = `claim-${id}.pdf`;
+
+    res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
+    res.setHeader("Content-Type", "application/pdf");
+
+    doc.pipe(res);
+
+    // Header
+    doc
+      .fontSize(20)
+      .text("PT. Expense Management System", { align: "center" })
+      .moveDown();
+
+    doc
+      .fontSize(16)
+      .text("Claim Approval Summary", { align: "center" })
+      .moveDown(2);
+
+    // Claim Info
+    doc.fontSize(12).text(`Claim ID: ${data.id}`);
+    doc.text(`Employee: ${data.employee_name}`);
+    doc.text(`Departement: ${data.role}`);
+    doc.text(`Category: ${data.category}`);
+    doc.text(`Amount: $${Number(data.amount).toFixed(2)}`);
+    doc.text(`Submitted: ${new Date(data.created_at).toLocaleDateString()}`);
+    doc.text(`Status: ${data.status.toUpperCase()}`);
+    doc.moveDown(2);
+
+    // Signature block
+    doc.text("Approved By:", { align: "right" }).moveDown(4);
+    doc.text("__________________________", { align: "right" });
+    doc.text("Manager Signature", { align: "right" });
+    doc.text(new Date().toLocaleDateString(), { align: "right" });
+
+    doc.end();
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
