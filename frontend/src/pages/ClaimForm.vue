@@ -18,7 +18,21 @@
 
         <CInputGroup class="mb-3">
           <CInputGroupText>Category</CInputGroupText>
-          <CFormInput v-model="category" placeholder="Category (optional)" />
+          <CFormSelect v-model="category" required>
+            <option disabled value="" selected>-- Select Category --</option>
+            <option v-for="c in categories" :key="c.id" :value="c.name">
+              {{ c.name }}
+            </option>
+          </CFormSelect>
+        </CInputGroup>
+
+        <CInputGroup class="mb-3">
+          <CInputGroupText>Receipt File</CInputGroupText>
+          <CFormInput
+            type="file"
+            accept=".png,.jpg,.jpeg,.pdf,.doc,.docx"
+            @change="handleFile"
+          />
         </CInputGroup>
 
         <CInputGroup class="mb-3">
@@ -53,8 +67,31 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import axios from "axios";
+
+const categories = ref([]);
+const file = ref(null);
+
+const handleFile = (e) => {
+  file.value = e.target.files[0];
+};
+
+const fetchCategories = async () => {
+  try {
+    const { data } = await axios.get(
+      `${import.meta.env.VITE_API_URL}/api/categories`,
+      {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      }
+    );
+    categories.value = data;
+  } catch (err) {
+    console.error("Failed to fetch categories", err);
+  }
+};
+
+onMounted(fetchCategories);
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
@@ -71,20 +108,26 @@ const msg = ref(null);
 
 const submit = async () => {
   try {
-    const payload = {
-      amount: amount.value,
-      description: description.value,
-      receipt_url: receipt_url.value,
-      category: category.value,
-    };
-    await axios.post(`${import.meta.env.VITE_API_URL}/api/claims`, payload, {
-      headers: { Authorization: "Bearer " + props.token },
+    const formData = new FormData();
+    formData.append("amount", amount.value);
+    formData.append("description", description.value);
+    formData.append("receipt_url", receipt_url.value);
+    formData.append("category", category.value);
+    if (file.value) formData.append("receipt_file", file.value);
+
+    await axios.post(`${import.meta.env.VITE_API_URL}/api/claims`, formData, {
+      headers: {
+        Authorization: "Bearer " + props.token,
+        "Content-Type": "multipart/form-data",
+      },
     });
+
     msg.value = "Claim submitted successfully";
     amount.value = null;
     description.value = "";
     category.value = "";
     receipt_url.value = "";
+    file.value = null;
     emit("submitted");
   } catch (err) {
     msg.value = err.response?.data?.error || "Submission failed";

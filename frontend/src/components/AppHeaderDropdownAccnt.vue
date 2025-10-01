@@ -1,5 +1,5 @@
 <script setup>
-import avatar from "@/assets/images/avatars/8.jpg";
+import avatar from "@/assets/images/vue400.jpg";
 
 const itemsCount = 42;
 import { useRouter } from "vue-router";

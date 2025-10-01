@@ -1,7 +1,8 @@
-const { Pool } = require("pg");
-require("dotenv").config();
+import { Pool } from "pg";
+import dotenv from "dotenv";
 
-// Gunakan variabel env terpisah untuk host, port, user, password, database
+dotenv.config();
+
 const pool = new Pool({
   host: process.env.PGHOST || "localhost",
   port: 5432,
@@ -11,7 +12,5 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
-module.exports = {
-  query: (text, params) => pool.query(text, params),
-  pool,
-};
+export const query = (text, params) => pool.query(text, params);
+export { pool };

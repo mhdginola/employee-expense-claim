@@ -1,24 +1,38 @@
-const express = require("express");
-const router = express.Router();
-const db = require("../config/database.js");
-const auth = require("../middleware/auth");
-const PDFDocument = require("pdfkit");
+import { Router } from "express";
+const router = Router();
+import upload from "../middleware/upload.js";
+import { query } from "../config/database.js";
+import auth from "../middleware/auth.js";
+import PDFDocument from "pdfkit";
+import { notifyManager } from "../index.js";
 
 // create a claim (employee)
-router.post("/", auth("employee"), async (req, res) => {
-  const { amount, description, receipt_url, category } = req.body;
-  const userId = req.user.id;
-  try {
-    const { rows } = await db.query(
-      `INSERT INTO claims (user_id, amount, description, receipt_url, category) VALUES ($1,$2,$3,$4,$5) RETURNING *`,
-      [userId, amount, description, receipt_url, category]
-    );
-    res.status(201).json(rows[0]);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Server error" });
+router.post(
+  "/",
+  auth("employee"),
+  upload.single("receipt_file"),
+  async (req, res) => {
+    const { amount, description, receipt_url, category } = req.body;
+    const filePath = req.file ? `/uploads/${req.file.filename}` : null;
+    const userId = req.user.id;
+    try {
+      const { rows } = await query(
+        `INSERT INTO claims (user_id, amount, description, receipt_url, category, receipt_file) VALUES ($1,$2,$3,$4,$5, $6) RETURNING *`,
+        [userId, amount, description, receipt_url, category, filePath]
+      );
+
+      await notifyManager(
+        req.user.manager_id,
+        `New claim submitted: ${category} - $${amount}`
+      );
+
+      res.status(201).json(rows[0]);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Server error" });
+    }
   }
-});
+);
 
 // list claims
 router.get("/", auth(), async (req, res) => {
@@ -31,11 +45,11 @@ router.get("/", auth(), async (req, res) => {
 
     if (req.user.role === "manager") {
       // hitung total
-      const countRes = await db.query("SELECT COUNT(*) FROM claims");
+      const countRes = await query("SELECT COUNT(*) FROM claims");
       total = parseInt(countRes.rows[0].count, 10);
 
       // ambil data dengan limit offset
-      const dataRes = await db.query(
+      const dataRes = await query(
         `SELECT c.*, u.full_name as requester 
          FROM claims c 
          JOIN users u ON u.id = c.user_id 
@@ -46,13 +60,13 @@ router.get("/", auth(), async (req, res) => {
       rows = dataRes.rows;
     } else {
       // employee hanya lihat claim sendiri
-      const countRes = await db.query(
+      const countRes = await query(
         "SELECT COUNT(*) FROM claims WHERE user_id=$1",
         [req.user.id]
       );
       total = parseInt(countRes.rows[0].count, 10);
 
-      const dataRes = await db.query(
+      const dataRes = await query(
         `SELECT * 
          FROM claims 
          WHERE user_id=$1 
@@ -80,7 +94,7 @@ router.get("/", auth(), async (req, res) => {
 router.get("/:id", auth(), async (req, res) => {
   const id = req.params.id;
   try {
-    const { rows } = await db.query(
+    const { rows } = await query(
       "SELECT c.*, u.full_name as requester FROM claims c JOIN users u ON u.id=c.user_id WHERE c.id=$1",
       [id]
     );
@@ -102,11 +116,17 @@ router.post("/:id/approve", auth("manager"), async (req, res) => {
   const managerId = req.user.id;
   const { comment } = req.body;
   try {
-    const { rows } = await db.query(
+    const { rows } = await query(
       "UPDATE claims SET status=$1, manager_id=$2, manager_comment=$3, updated_at=now() WHERE id=$4 RETURNING *",
       ["approved", managerId, comment, id]
     );
     if (!rows[0]) return res.status(404).json({ error: "Not found" });
+    const claim = rows[0];
+
+    await notifyManager(
+      claim.user_id,
+      `Your claim #${claim.id} has been ${claim.status} by manager.`
+    );
     res.json(rows[0]);
   } catch (err) {
     console.error(err);
@@ -120,11 +140,17 @@ router.post("/:id/reject", auth("manager"), async (req, res) => {
   const managerId = req.user.id;
   const { comment } = req.body;
   try {
-    const { rows } = await db.query(
+    const { rows } = await query(
       "UPDATE claims SET status=$1, manager_id=$2, manager_comment=$3, updated_at=now() WHERE id=$4 RETURNING *",
       ["rejected", managerId, comment, id]
     );
     if (!rows[0]) return res.status(404).json({ error: "Not found" });
+    const claim = rows[0];
+
+    await notifyManager(
+      claim.user_id,
+      `Your claim #${claim.id} has been ${claim.status} by manager.`
+    );
     res.json(rows[0]);
   } catch (err) {
     console.error(err);
@@ -137,7 +163,7 @@ router.get("/:id/pdf", auth(), async (req, res) => {
   try {
     const { id } = req.params;
 
-    const claim = await db.query(
+    const claim = await query(
       `SELECT c.id, c.category, c.amount, c.created_at, c.status, 
               e.full_name as employee_name, e.role 
        FROM claims c 
@@ -199,4 +225,4 @@ router.get("/:id/pdf", auth(), async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

@@ -1,30 +1,39 @@
 <script setup>
-import { onMounted, ref } from 'vue'
-import { useColorModes } from '@coreui/vue'
+import { onMounted, ref } from "vue";
+import { useColorModes } from "@coreui/vue";
 
-import AppBreadcrumb from '@/components/AppBreadcrumb.vue'
-import AppHeaderDropdownAccnt from '@/components/AppHeaderDropdownAccnt.vue'
-import { useSidebarStore } from '@/stores/sidebar.js'
+import AppBreadcrumb from "@/components/AppBreadcrumb.vue";
+import AppHeaderDropdownAccnt from "@/components/AppHeaderDropdownAccnt.vue";
+import { useSidebarStore } from "@/stores/sidebar.js";
+import { useSocket } from "@/pages/useSocket.js";
 
-const headerClassNames = ref('mb-4 p-0')
-const { colorMode, setColorMode } = useColorModes('coreui-free-vue-admin-template-theme')
-const sidebar = useSidebarStore()
+const user = JSON.parse(localStorage.getItem("user"));
+const { notifications, markAsRead, markAllAsRead } = useSocket(user.id);
+
+const headerClassNames = ref("mb-4 p-0");
+const { colorMode, setColorMode } = useColorModes(
+  "coreui-free-vue-admin-template-theme"
+);
+const sidebar = useSidebarStore();
 
 onMounted(() => {
-  document.addEventListener('scroll', () => {
+  document.addEventListener("scroll", () => {
     if (document.documentElement.scrollTop > 0) {
-      headerClassNames.value = 'mb-4 p-0 shadow-sm'
+      headerClassNames.value = "mb-4 p-0 shadow-sm";
     } else {
-      headerClassNames.value = 'mb-4 p-0'
+      headerClassNames.value = "mb-4 p-0";
     }
-  })
-})
+  });
+});
 </script>
 
 <template>
   <CHeader position="sticky" :class="headerClassNames">
     <CContainer class="border-bottom px-4" fluid>
-      <CHeaderToggler @click="sidebar.toggleVisible()" style="margin-inline-start: -14px">
+      <CHeaderToggler
+        @click="sidebar.toggleVisible()"
+        style="margin-inline-start: -14px"
+      >
         <CIcon icon="cil-menu" size="lg" />
       </CHeaderToggler>
       <CHeaderNav class="d-none d-md-flex">
@@ -39,21 +48,34 @@ onMounted(() => {
         </CNavItem>
       </CHeaderNav>
       <CHeaderNav class="ms-auto">
-        <CNavItem>
-          <CNavLink href="#">
+        <CDropdown in-nav>
+          <CDropdownToggle color="secondary" class="position-relative">
             <CIcon icon="cil-bell" size="lg" />
-          </CNavLink>
-        </CNavItem>
-        <CNavItem>
-          <CNavLink href="#">
-            <CIcon icon="cil-list" size="lg" />
-          </CNavLink>
-        </CNavItem>
-        <CNavItem>
-          <CNavLink href="#">
-            <CIcon icon="cil-envelope-open" size="lg" />
-          </CNavLink>
-        </CNavItem>
+            <span
+              v-if="notifications.filter((n) => !n.is_read).length > 0"
+              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+            >
+              {{ notifications.filter((n) => !n.is_read).length }}
+            </span>
+          </CDropdownToggle>
+          <CDropdownMenu>
+            <CDropdownItem
+              v-for="n in notifications"
+              :key="n.id"
+              :class="{ 'fw-bold': !n.is_read }"
+              @click="markAsRead(n.id)"
+            >
+              {{ n.message }}
+              <small class="text-muted d-block">{{
+                new Date(n.created_at).toLocaleString()
+              }}</small>
+            </CDropdownItem>
+            <CDropdownDivider />
+            <CDropdownItem @click="markAllAsRead"
+              >Mark all as read</CDropdownItem
+            >
+          </CDropdownMenu>
+        </CDropdown>
       </CHeaderNav>
       <CHeaderNav>
         <li class="nav-item py-1">

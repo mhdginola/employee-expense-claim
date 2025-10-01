@@ -1,5 +1,8 @@
-const jwt = require("jsonwebtoken");
-require("dotenv").config();
+import pkg from "jsonwebtoken";
+const { verify } = pkg;
+import dotenv from "dotenv";
+
+dotenv.config();
 
 function auth(requiredRole) {
   return (req, res, next) => {
@@ -7,7 +10,7 @@ function auth(requiredRole) {
     if (!authHeader) return res.status(401).json({ error: "No token" });
     const token = authHeader.split(" ")[1];
     try {
-      const payload = jwt.verify(token, process.env.JWT_SECRET);
+      const payload = verify(token, process.env.JWT_SECRET);
       req.user = payload;
       if (requiredRole && payload.role !== requiredRole) {
         return res.status(403).json({ error: "Forbidden" });
@@ -19,4 +22,4 @@ function auth(requiredRole) {
   };
 }
 
-module.exports = auth;
+export default auth;

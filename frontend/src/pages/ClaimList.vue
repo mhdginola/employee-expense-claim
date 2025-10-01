@@ -124,7 +124,7 @@ import ClaimDetailModal from "@/pages/ClaimDetail.vue";
 import ClaimSubmitModal from "@/pages/ClaimForm.vue";
 
 const currentPage = ref(1);
-const perPage = ref("5");
+const perPage = ref("10");
 const showSubmit = ref(false);
 const claims = ref([]);
 const showModal = ref(false);
