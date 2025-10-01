@@ -19,11 +19,11 @@ const sendReminderJob = async () => {
 
   try {
     const result = await query(
-      `SELECT c.id as claim_id, u.full_name as employee_name, c.category, c.amount, c.created_at, 'mhdginola3@gmail.com' as manager_email
+      `SELECT c.id as claim_id, u.full_name as employee_name, c.category, c.amount, c.created_at, (SELECT email FROM users uu WHERE uu.id = u.manager_id ) as manager_email
        FROM claims c
        JOIN users u ON u.id = c.user_id
        WHERE c.status = 'pending'
-       AND c.created_at < NOW() - INTERVAL '5 minutes'`
+       AND c.created_at < NOW() - INTERVAL '7 days'`
     );
 
     if (process.env.MAIL_ENABLE != "Y") {
@@ -71,8 +71,8 @@ const startReminderJob = () => {
   // Jalankan langsung saat start
   sendReminderJob();
 
-  // Schedule job setiap 5 menit
-  schedule("*/5 * * * *", () => {
+  // Schedule job setiap jam 8
+  schedule("0 8 * * *", () => {
     sendReminderJob();
   });
 };

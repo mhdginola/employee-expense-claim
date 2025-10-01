@@ -6,7 +6,7 @@ import DefaultLayout from "@/layouts/DefaultLayout.vue";
 const routes = [
   {
     path: "/",
-    name: "Home",
+    name: "App",
     component: DefaultLayout,
     redirect: "/claim/list",
     children: [
@@ -26,6 +26,9 @@ const routes = [
     path: "/pages",
     redirect: "/pages/404",
     name: "Pages",
+    meta: {
+      middleware: "auth",
+    },
     component: {
       render() {
         return h(resolveComponent("router-view"));
@@ -63,6 +66,18 @@ const router = createRouter({
     // always scroll to top
     return { top: 0 };
   },
+});
+
+router.beforeEach(async (to, from, next) => {
+  if (to.meta.middleware == "auth") {
+    return next();
+  } else {
+    if (localStorage.getItem("token")) {
+      return next();
+    } else {
+      return next({ name: "Login" });
+    }
+  }
 });
 
 export default router;

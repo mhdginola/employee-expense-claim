@@ -86,7 +86,7 @@ app.use("/api/categories", categoriesRoutes);
 app.use("/uploads", express.static("uploads"));
 
 // Start reminder job
-// startReminderJob();
+startReminderJob();
 
 const PORT = process.env.PORT || 4000;
 
