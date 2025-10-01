@@ -83,6 +83,7 @@ app.use("/api/claims", claimsRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/notifications", notificationsRoutes);
 app.use("/api/categories", categoriesRoutes);
+app.use("/uploads", express.static("uploads"));
 
 // Start reminder job
 // startReminderJob();

@@ -12,7 +12,19 @@
         <p><strong>Reason:</strong> {{ claim.reason }}</p>
         <p><strong>Status:</strong> {{ claim.status }}</p>
         <p><strong>Created:</strong> {{ formatDate(claim.created_at) }}</p>
-
+        <!-- Receipt file preview -->
+        <div v-if="claim.receipt_file" class="mt-3">
+          <strong>Receipt:</strong>
+          <div>
+            <a
+              :href="`${baseUrl}${claim.receipt_file}`"
+              target="_blank"
+              class="btn btn-sm btn-outline-primary mt-2"
+            >
+              Download Receipt
+            </a>
+          </div>
+        </div>
         <div
           v-if="isManager && claim.status === 'pending'"
           class="d-flex gap-2 mt-3"
@@ -52,6 +64,7 @@ const props = defineProps({
 const emit = defineEmits(["close", "updated"]);
 
 const claim = ref(null);
+const baseUrl = import.meta.env.VITE_API_URL;
 
 const fetchDetail = async () => {
   if (!props.claimId) return;
