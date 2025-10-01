@@ -63,7 +63,7 @@ export async function notifyManager(managerId, message) {
   await query(
     `INSERT INTO notifications (user_id, message)
      VALUES ($1, $2)`,
-    [managerId, `Claim  pending > 7 days`]
+    [managerId, `Claim requested`]
   );
 
   const socketId = managerSockets.get(key);
